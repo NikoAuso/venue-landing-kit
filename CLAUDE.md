@@ -57,6 +57,9 @@ copy from `FALLBACK_COPY`): re-theming the deploy — the product's founding ope
 instead of failing. Never hardcode deploy copy or anchors in a spec.
 
 CI (`.github/workflows/ci.yml`) runs `quality` (check → lint → **format:check** → unit) and `e2e` (all three suites).
+`.github/workflows/pages.yml` publishes the demo to GitHub Pages on every push to `main`: it boots the SSR build in
+DEMO_MODE and mirrors it with `wget --convert-links` (no static build mode), so every route it ships must be
+reachable by links from `/` or `/demo/piscina`.
 
 ## Architecture: how a page renders
 

@@ -1,0 +1,63 @@
+name: Pages preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Snapshot the demo
+    runs-on: ubuntu-latest
+    env:
+      DEMO_MODE: 'true'
+      PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Pages serves static files only: boot the SSR server in demo mode and
+      # mirror it. --convert-links rewrites root-relative URLs to relative ones,
+      # so the copy works under the /<repo>/ subpath. The /demo/<preset> pages
+      # are reached through their preset nav; a 404 on any link fails the step.
+      - name: Mirror the demo routes
+        run: |
+          PORT=4321 HOST=127.0.0.1 node dist/server/entry.mjs &
+          for i in $(seq 30); do curl -sf -o /dev/null http://127.0.0.1:4321/health && break; sleep 1; done
+          wget --mirror --page-requisites --convert-links --adjust-extension --no-host-directories \
+            --execute robots=off --no-verbose --directory-prefix=site \
+            http://127.0.0.1:4321/ http://127.0.0.1:4321/demo/piscina
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
