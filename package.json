@@ -30,7 +30,7 @@
     "test:lh": "lhci autorun"
   },
   "dependencies": {
-    "@astrojs/node": "^11.1.2",
+    "@astrojs/node": "^11.1.12",
     "@astrojs/sitemap": "^3.7.3",
     "@iconify-json/fa6-brands": "^1.2.6",
     "@iconify-json/fa6-solid": "^1.2.4",
